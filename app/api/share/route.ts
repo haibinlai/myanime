@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createShareId, normalizeShareId } from "@/lib/share/id";
+import { SHARE_SLOT_COUNT } from "@/lib/share/config";
 import { saveShare, getShare } from "@/lib/share/storage";
 import { ShareGame, StoredShareV1 } from "@/lib/share/types";
 import { parseSubjectKind } from "@/lib/subject-kind";
@@ -100,7 +101,7 @@ function sanitizeGame(input: unknown): ShareGame | null {
 }
 
 function parseGames(input: unknown): Array<ShareGame | null> | null {
-  if (!Array.isArray(input) || input.length !== 9) return null;
+  if (!Array.isArray(input) || input.length > SHARE_SLOT_COUNT) return null;
   return input.map((item) => sanitizeGame(item));
 }
 
@@ -127,7 +128,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           ok: false,
-          error: "games 参数必须是长度为 9 的数组",
+          error: `games 参数必须是长度不超过 ${SHARE_SLOT_COUNT} 的数组`,
           code: "invalid_games",
         },
         { status: 400 }

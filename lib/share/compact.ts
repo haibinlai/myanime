@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { SHARE_SLOT_COUNT, createShareSlots } from "@/lib/share/config";
 import { ShareSubject } from "@/lib/share/types";
 
 export type CompactShareSlot = {
@@ -109,10 +110,10 @@ export function toCompactSharePayload(games: Array<ShareSubject | null>): {
   payload: CompactSharePayload;
   subjectSnapshots: Map<string, SubjectSnapshot>;
 } {
-  const payload: CompactSharePayload = Array.from({ length: 9 }, () => null);
+  const payload: CompactSharePayload = createShareSlots<CompactShareSlot>();
   const subjectSnapshots = new Map<string, SubjectSnapshot>();
 
-  for (let index = 0; index < 9; index += 1) {
+  for (let index = 0; index < SHARE_SLOT_COUNT; index += 1) {
     const item = games[index];
     if (!item || typeof item !== "object") {
       payload[index] = null;
@@ -212,12 +213,12 @@ export function compactPayloadToGames(params: {
 }
 
 export function normalizeCompactPayload(value: unknown): CompactSharePayload | null {
-  if (!Array.isArray(value) || value.length !== 9) {
+  if (!Array.isArray(value) || value.length > SHARE_SLOT_COUNT) {
     return null;
   }
 
-  const payload: CompactSharePayload = Array.from({ length: 9 }, () => null);
-  for (let index = 0; index < 9; index += 1) {
+  const payload: CompactSharePayload = createShareSlots<CompactShareSlot>();
+  for (let index = 0; index < Math.min(value.length, SHARE_SLOT_COUNT); index += 1) {
     const slot = value[index];
     if (!slot || typeof slot !== "object") {
       payload[index] = null;

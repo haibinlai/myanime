@@ -25,6 +25,7 @@ import {
 } from "@/lib/subject-kind";
 import { FILL_MODE_ORDER, FillMode, getFillModeMeta } from "@/lib/fill-mode";
 import { normalizeSearchQuery } from "@/lib/search/query";
+import { SHARE_SLOT_COUNT, createShareSlots, normalizeShareSlots } from "@/lib/share/config";
 import { SubjectSearchResponse, ShareGame } from "@/lib/share/types";
 import { cn } from "@/lib/utils";
 
@@ -56,7 +57,7 @@ function createSearchMeta(noResultQuery: string | null = null): SearchMeta {
 }
 
 function createEmptyGames() {
-  return Array.from({ length: 9 }, () => null as ShareGame | null);
+  return createShareSlots<ShareGame>();
 }
 
 function cloneGames(games: Array<ShareGame | null>) {
@@ -64,10 +65,7 @@ function cloneGames(games: Array<ShareGame | null>) {
 }
 
 function normalizeGamesForState(games?: Array<ShareGame | null>) {
-  if (!Array.isArray(games) || games.length !== 9) {
-    return createEmptyGames();
-  }
-  return cloneGames(games);
+  return cloneGames(normalizeShareSlots<ShareGame>(games));
 }
 
 const CREATOR_STORAGE_KEY = "my-nine-creator:v1";
@@ -201,7 +199,7 @@ export default function My9V3App({
   const [spoilerExpandedSet, setSpoilerExpandedSet] = useState<Set<number>>(new Set());
 
   const filledCount = useMemo(() => games.filter((item) => item !== null).length, [games]);
-  const allSelected = filledCount === 9;
+  const allSelected = filledCount === SHARE_SLOT_COUNT;
   const isReadonly = readOnlyShare;
 
   const draftStorageKey = kindMeta.draftStorageKey;
@@ -296,7 +294,7 @@ export default function My9V3App({
         }
 
         const payloadGames = Array.isArray(json.games) ? json.games : createEmptyGames();
-        setGames(payloadGames.length === 9 ? payloadGames : createEmptyGames());
+        setGames(normalizeGamesForState(payloadGames));
         setCreatorName(typeof json.creatorName === "string" ? json.creatorName : "");
         setShareId(json.shareId || currentShareId);
       } catch {
@@ -327,8 +325,8 @@ export default function My9V3App({
       if (raw) {
         const parsed = JSON.parse(raw);
         const savedGames = Array.isArray(parsed?.games) ? parsed.games : null;
-        if (savedGames && savedGames.length === 9) {
-          setGames(savedGames);
+        if (savedGames) {
+          setGames(normalizeGamesForState(savedGames));
         } else {
           setGames(createEmptyGames());
         }
@@ -600,7 +598,7 @@ export default function My9V3App({
     if (guardReadonly()) return;
     if (!allSelected) {
       const confirmed = window.confirm(
-        `当前仅选择了 ${filledCount}/9${selectionUnit}${kindMeta.label}，确认继续保存吗？`
+        `当前仅选择了 ${filledCount}/${SHARE_SLOT_COUNT}${selectionUnit}${kindMeta.label}，确认继续保存吗？`
       );
       if (!confirmed) return;
     }
@@ -695,7 +693,7 @@ export default function My9V3App({
 
   return (
     <main className="min-h-screen bg-background px-4 py-16 text-foreground">
-      <div className="mx-auto flex w-full max-w-2xl flex-col items-center gap-4">
+      <div className="mx-auto flex w-full max-w-4xl flex-col items-center gap-4">
         <header className="space-y-3 text-center">
           <div className="inline-flex items-center gap-2 sm:gap-3">
             <h1 className="whitespace-nowrap text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-4xl">

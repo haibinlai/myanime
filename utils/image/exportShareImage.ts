@@ -2,11 +2,11 @@
 
 import QRCode from "qrcode";
 import { getCustomEntryExportTitle, type CustomEntry } from "@/lib/custom/types";
+import { SHARE_SLOT_COUNT, SHARE_SLOT_COUNT_LABEL } from "@/lib/share/config";
 import { SubjectKind, getSubjectKindMeta } from "@/lib/subject-kind";
 import { ShareGame } from "@/lib/share/types";
 
 const CANVAS_WIDTH = 1080;
-const CANVAS_HEIGHT = 1440;
 const ENHANCED_EXTRA_HEIGHT = 220;
 
 const PANEL_MARGIN_X = 42;
@@ -18,9 +18,16 @@ const SLOT_GAP = 14;
 const PANEL_X = PANEL_MARGIN_X;
 const PANEL_Y = PANEL_MARGIN_Y;
 const PANEL_WIDTH = CANVAS_WIDTH - PANEL_MARGIN_X * 2;
-const BASE_PANEL_HEIGHT = CANVAS_HEIGHT - PANEL_MARGIN_Y * 2;
 const SECTION_DIVIDER_INSET = 22;
 const SECTION_CONTENT_X = PANEL_X + 26;
+const EXPORT_GRID_COLUMNS = SHARE_SLOT_COUNT > 12 ? 4 : 3;
+const EXPORT_GRID_ROWS = Math.ceil(SHARE_SLOT_COUNT / EXPORT_GRID_COLUMNS);
+const GRID_INNER_WIDTH = PANEL_WIDTH - PANEL_PADDING * 2;
+const GRID_SLOT_WIDTH = Math.floor((GRID_INNER_WIDTH - SLOT_GAP * (EXPORT_GRID_COLUMNS - 1)) / EXPORT_GRID_COLUMNS);
+const GRID_SLOT_HEIGHT = Math.floor((GRID_SLOT_WIDTH * 4) / 3);
+const GRID_HEIGHT = GRID_SLOT_HEIGHT * EXPORT_GRID_ROWS + SLOT_GAP * (EXPORT_GRID_ROWS - 1);
+const BASE_PANEL_HEIGHT = GRID_HEIGHT + PANEL_PADDING * 2;
+const CANVAS_HEIGHT = BASE_PANEL_HEIGHT + PANEL_MARGIN_Y * 2;
 
 const REVIEW_SECTION_TOP_PADDING = 28;
 const REVIEW_SECTION_BOTTOM_PADDING = 32;
@@ -79,7 +86,7 @@ function displayUserName(creatorName?: string | null): string {
 export function buildDefaultShareImageHeaderTitle(kind: SubjectKind, creatorName?: string | null): string {
   const kindMeta = getSubjectKindMeta(kind);
   const userName = displayUserName(creatorName);
-  return `构成${userName}的九${kindMeta.selectionUnit}${kindMeta.label}`;
+  return `构成${userName}的${SHARE_SLOT_COUNT_LABEL}${kindMeta.selectionUnit}${kindMeta.label}`;
 }
 
 export function buildDefaultShareImageHeaderSubtitle(
@@ -345,15 +352,12 @@ function drawGrid(
   covers: Array<HTMLImageElement | null>,
   showNames: boolean
 ) {
-  const innerWidth = PANEL_WIDTH - PANEL_PADDING * 2;
-  const gridHeight = BASE_PANEL_HEIGHT - PANEL_PADDING * 2;
+  const slotWidth = GRID_SLOT_WIDTH;
+  const slotHeight = GRID_SLOT_HEIGHT;
 
-  const slotWidth = Math.floor((innerWidth - SLOT_GAP * 2) / 3);
-  const slotHeight = Math.floor((gridHeight - SLOT_GAP * 2) / 3);
-
-  for (let index = 0; index < 9; index += 1) {
-    const col = index % 3;
-    const row = Math.floor(index / 3);
+  for (let index = 0; index < SHARE_SLOT_COUNT; index += 1) {
+    const col = index % EXPORT_GRID_COLUMNS;
+    const row = Math.floor(index / EXPORT_GRID_COLUMNS);
     const item = items[index] || { cover: null, title: "" };
 
     const x = PANEL_X + PANEL_PADDING + col * (slotWidth + SLOT_GAP);
@@ -759,7 +763,7 @@ export async function generateShareImageBlob(options: {
 
     const line1 = kindMeta
       ? buildDefaultShareImageHeaderTitle(options.kind, options.creatorName)
-      : options.title?.trim() || "我的九宫格";
+      : options.title?.trim() || "我的作品清单";
     const line2 =
       options.headerSubtitle ??
       (kindMeta

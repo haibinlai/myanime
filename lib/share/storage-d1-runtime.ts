@@ -154,6 +154,18 @@ type GlobalRuntimeWithEnv = typeof globalThis & {
   __MY9_CF_ENV?: LocalPlatformEnv;
 };
 
+type CloudflareD1HttpResult<T = Record<string, unknown>> = {
+  success?: boolean;
+  meta?: { changes?: number };
+  results?: T[];
+};
+
+type CloudflareD1HttpResponse<T = Record<string, unknown>> = {
+  success?: boolean;
+  errors?: Array<{ message?: string }>;
+  result?: CloudflareD1HttpResult<T>[];
+};
+
 let localPlatformPromise: Promise<LocalPlatformEnv | null> | null = null;
 let d1DatabasePromise: Promise<D1DatabaseLike | null> | null = null;
 let d1SchemaReadyPromise: Promise<boolean> | null = null;
@@ -161,6 +173,55 @@ const LOCAL_PLATFORM_TIMEOUT_MS = parsePositiveInt(
   readEnv("MY9_D1_LOCAL_PROXY_TIMEOUT_MS"),
   4000
 );
+const REMOTE_D1_DATABASE_ID_BY_ENV = {
+  production: "6953e552-443b-479d-b6fa-3ffdeac2e60a",
+  test: "bdaef170-8163-4c9b-a47a-1086c9e1f54f",
+} as const;
+
+function resolveRemoteD1Env() {
+  return readEnv("MY9_DB_WRANGLER_ENV", "NEXT_DEV_WRANGLER_ENV") === "test" ? "test" : "production";
+}
+
+function resolveRemoteD1DatabaseId(targetEnv: "production" | "test") {
+  return targetEnv === "test"
+    ? readEnv("MY9_REMOTE_D1_DATABASE_ID_TEST", "MY9_REMOTE_D1_DATABASE_ID") || REMOTE_D1_DATABASE_ID_BY_ENV.test
+    : readEnv("MY9_REMOTE_D1_DATABASE_ID") || REMOTE_D1_DATABASE_ID_BY_ENV.production;
+}
+
+function escapeSqlString(value: string) {
+  return `'${value.replaceAll("'", "''")}'`;
+}
+
+function toSqlLiteral(value: D1Scalar) {
+  if (value === null || value === undefined) {
+    return "NULL";
+  }
+  if (typeof value === "number") {
+    if (!Number.isFinite(value)) {
+      throw new Error("cannot serialize non-finite number for remote D1 query");
+    }
+    return String(value);
+  }
+  return escapeSqlString(value);
+}
+
+function inlineSqlParams(sql: string, params: D1Scalar[]) {
+  let index = 0;
+  const expanded = sql.replace(/\?/g, () => {
+    if (index >= params.length) {
+      throw new Error("not enough params provided for remote D1 batch");
+    }
+    const literal = toSqlLiteral(params[index]);
+    index += 1;
+    return literal;
+  });
+
+  if (index !== params.length) {
+    throw new Error("too many params provided for remote D1 batch");
+  }
+
+  return expanded;
+}
 
 async function dynamicRuntimeImport<T = unknown>(specifier: string): Promise<T> {
   const importer = new Function("s", "return import(s);") as (s: string) => Promise<T>;
@@ -203,6 +264,90 @@ async function getCloudflareBoundD1(): Promise<D1DatabaseLike | null> {
   }
 }
 
+async function executeRemoteD1Query<T = Record<string, unknown>>(
+  sql: string,
+  params: D1Scalar[] = []
+): Promise<CloudflareD1HttpResult<T>[]> {
+  const accountId = readEnv("CLOUDFLARE_ACCOUNT_ID");
+  const token = readEnv("MY9_SQL_API_TOKEN", "CLOUDFLARE_API_TOKEN");
+  const databaseId = resolveRemoteD1DatabaseId(resolveRemoteD1Env());
+
+  if (!accountId || !token || !databaseId) {
+    throw new Error("remote d1 credentials are not configured");
+  }
+
+  const response = await fetch(
+    `https://api.cloudflare.com/client/v4/accounts/${accountId}/d1/database/${databaseId}/query`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        sql,
+        ...(params.length > 0 ? { params } : {}),
+      }),
+      cache: "no-store",
+    }
+  );
+
+  const payload = (await response.json()) as CloudflareD1HttpResponse<T>;
+  const errors = Array.isArray(payload?.errors)
+    ? payload.errors.map((item) => item?.message).filter((item): item is string => Boolean(item))
+    : [];
+
+  if (!response.ok || payload?.success === false) {
+    throw new Error(errors[0] || `remote d1 query failed with status ${response.status}`);
+  }
+
+  return Array.isArray(payload?.result) ? payload.result : [];
+}
+
+function createRemoteD1Database(): D1DatabaseLike {
+  return {
+    prepare(query: string) {
+      return createRemotePreparedStatement(query);
+    },
+    async batch(statements: D1PreparedStatementLike[]) {
+      const remoteStatements = statements as Array<D1PreparedStatementLike & { sql?: string; params?: D1Scalar[] }>;
+      const serializedStatements = remoteStatements.map((statement) => {
+        if (typeof statement.sql !== "string") {
+          throw new Error("remote d1 batch requires serializable statements");
+        }
+        return inlineSqlParams(statement.sql, Array.isArray(statement.params) ? statement.params : []);
+      });
+      const sql = ["BEGIN TRANSACTION", ...serializedStatements, "COMMIT"].join(";\n");
+      return await executeRemoteD1Query(sql);
+    },
+    async exec(query: string) {
+      const results = await executeRemoteD1Query(query);
+      return {
+        count: results.length,
+      };
+    },
+  };
+}
+
+function createRemotePreparedStatement(sql: string, boundParams: D1Scalar[] = []): D1PreparedStatementLike & {
+  sql: string;
+  params: D1Scalar[];
+} {
+  return {
+    sql,
+    params: boundParams,
+    bind: (...values: D1Scalar[]) => createRemotePreparedStatement(sql, values),
+    async all<T = Record<string, unknown>>() {
+      const results = await executeRemoteD1Query<T>(sql, boundParams);
+      return results[0]?.results ?? [];
+    },
+    async run() {
+      const results = await executeRemoteD1Query(sql, boundParams);
+      return results[0] ?? {};
+    },
+  };
+}
+
 async function getLocalPlatformEnv(): Promise<LocalPlatformEnv | null> {
   if (!localPlatformPromise) {
     localPlatformPromise = (async () => {
@@ -235,7 +380,19 @@ export async function getD1Database(): Promise<D1DatabaseLike | null> {
 
       const localEnv = await getLocalPlatformEnv();
       const localDb = localEnv?.MY9_DB;
-      return localDb && typeof localDb.prepare === "function" ? localDb : null;
+      if (localDb && typeof localDb.prepare === "function") {
+        return localDb;
+      }
+
+      if (
+        readEnv("CLOUDFLARE_ACCOUNT_ID") &&
+        readEnv("MY9_SQL_API_TOKEN", "CLOUDFLARE_API_TOKEN") &&
+        resolveRemoteD1DatabaseId(resolveRemoteD1Env())
+      ) {
+        return createRemoteD1Database();
+      }
+
+      return null;
     })();
   }
   return d1DatabasePromise;

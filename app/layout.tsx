@@ -24,23 +24,23 @@ const siteUrl = getServerSiteUrl();
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: "构成我的九部作品",
-  description: "挑选 9 部最能代表你的作品，生成并分享你的「构成我的九部作品」页面。",
+  title: "构成我的20部作品",
+  description: "挑选 20 部最能代表你的作品，生成并分享你的「构成我的20部作品」页面。",
   alternates: {
     canonical: "/",
   },
   openGraph: {
     type: "website",
     locale: "zh_CN",
-    title: "构成我的九部作品",
-    description: "挑选 9 部最能代表你的作品，生成并分享你的「构成我的九部作品」页面。",
+    title: "构成我的20部作品",
+    description: "挑选 20 部最能代表你的作品，生成并分享你的「构成我的20部作品」页面。",
     url: "/",
-    siteName: "构成我的九部作品",
+    siteName: "构成我的20部作品",
   },
   twitter: {
     card: "summary_large_image",
-    title: "构成我的九部作品",
-    description: "挑选 9 部最能代表你的作品，生成并分享你的「构成我的九部作品」页面。",
+    title: "构成我的20部作品",
+    description: "挑选 20 部最能代表你的作品，生成并分享你的「构成我的20部作品」页面。",
   },
   verification: {
     google: "swtOMxSQC6Dfn-w4YtMQ3OFH4SZz00Blcd6FI0qMgJc",

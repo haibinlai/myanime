@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import My9V3App from "@/app/components/My9V3App";
-import { SUBJECT_KIND_ORDER, getSubjectKindMeta, parseSubjectKind } from "@/lib/subject-kind";
+import { SUBJECT_KIND_ORDER, getSubjectKindLongLabel, parseSubjectKind } from "@/lib/subject-kind";
 
 export const dynamicParams = false;
 
@@ -26,9 +26,8 @@ export async function generateMetadata({
     return { title: "页面不存在" };
   }
 
-  const meta = getSubjectKindMeta(kind);
   return {
-    title: `构成我的${meta.longLabel}`,
+    title: `构成我的${getSubjectKindLongLabel(kind)}`,
   };
 }
 

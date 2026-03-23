@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { FILL_MODE_ORDER, FillMode, getFillModeMeta } from "@/lib/fill-mode";
+import { SHARE_SLOT_COUNT_LABEL } from "@/lib/share/config";
 import { cn } from "@/lib/utils";
 
 export default function HomeKindEntry() {
@@ -11,7 +12,8 @@ export default function HomeKindEntry() {
   const pickerRef = useRef<HTMLDivElement | null>(null);
   const scrollRafRef = useRef<number | null>(null);
   const fillModeMeta = getFillModeMeta(mode);
-  const titlePrefix = mode === "custom" ? "构成我的……" : `构成我的九${fillModeMeta.selectionUnit}`;
+  const titlePrefix =
+    mode === "custom" ? "构成我的……" : `构成我的${SHARE_SLOT_COUNT_LABEL}${fillModeMeta.selectionUnit}`;
   const optionRefs = useRef<Partial<Record<FillMode, HTMLButtonElement | null>>>({});
 
   function scrollKindIntoCenter(targetKind: FillMode, behavior: ScrollBehavior) {

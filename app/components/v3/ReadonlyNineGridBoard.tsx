@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { Plus } from "lucide-react";
+import { SHARE_SLOT_COUNT } from "@/lib/share/config";
 import { ShareGame } from "@/lib/share/types";
 import { SubjectKind } from "@/lib/subject-kind";
 import { cn } from "@/lib/utils";
@@ -19,8 +20,9 @@ function shouldTopCropCover(kind?: SubjectKind) {
 }
 
 export function ReadonlyNineGridBoard({ games, subjectLabel, kind }: ReadonlyNineGridBoardProps) {
+  const useExpandedGrid = SHARE_SLOT_COUNT > 12;
   return (
-    <div className="w-full grid grid-cols-3 gap-2 sm:gap-3">
+    <div className={cn("grid w-full gap-2 sm:gap-3", useExpandedGrid ? "grid-cols-3 sm:grid-cols-4" : "grid-cols-3")}>
       {games.map((game, index) => {
         const id = game ? `subject-${game.id}-${index}` : `empty-${index}`;
         return (

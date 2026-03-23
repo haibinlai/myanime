@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { SHARE_SLOT_COUNT } from "@/lib/share/config";
 import { cn } from "@/lib/utils";
 
 interface ActionClusterProps {
@@ -18,7 +19,9 @@ interface ActionClusterProps {
 function saveButtonLabel(params: { saving: boolean; filledCount: number; remainingUnit: string }) {
   const { saving, filledCount, remainingUnit } = params;
   if (saving) return "保存中...";
-  if (filledCount < 9) return `还差 ${9 - filledCount} ${remainingUnit}可保存`;
+  if (filledCount < SHARE_SLOT_COUNT) {
+    return `还差 ${SHARE_SLOT_COUNT - filledCount} ${remainingUnit}可保存`;
+  }
   return "保存页面";
 }
 
@@ -39,9 +42,11 @@ export function ActionCluster({
   return (
     <section className="flex w-full flex-col items-center gap-3">
       <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-1.5 text-sm font-semibold text-card-foreground">
-        <span>{filledCount} / 9 已选择</span>
-        {!readOnly && filledCount < 9 ? (
-          <span className="text-xs font-bold text-orange-500">还差{9 - filledCount}{remainingUnit}</span>
+        <span>{filledCount} / {SHARE_SLOT_COUNT} 已选择</span>
+        {!readOnly && filledCount < SHARE_SLOT_COUNT ? (
+          <span className="text-xs font-bold text-orange-500">
+            还差{SHARE_SLOT_COUNT - filledCount}{remainingUnit}
+          </span>
         ) : null}
       </div>
 
@@ -72,7 +77,7 @@ export function ActionCluster({
             className={cn(
               "inline-flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-full bg-sky-600 px-4 py-3 text-sm font-bold text-white shadow-sm shadow-sky-200 transition-all hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-45",
               !saveDisabled &&
-                filledCount < 9 &&
+                filledCount < SHARE_SLOT_COUNT &&
                 "cursor-not-allowed opacity-45 hover:bg-sky-600"
             )}
             disabled={saveDisabled}

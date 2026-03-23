@@ -10,6 +10,7 @@ import type {
   TrendView,
   TrendYearPage,
 } from "@/lib/share/types";
+import { SHARE_SLOT_COUNT, createShareSlots } from "@/lib/share/config";
 import { DEFAULT_SUBJECT_KIND, type SubjectKind, parseSubjectKind } from "@/lib/subject-kind";
 
 export const TRENDS_CACHE_PREFIX = "trends:cache:";
@@ -263,11 +264,11 @@ export function parseTrendSampleSummaryPayload(value: unknown): TrendSampleSumma
 
 export function normalizeGames(value: unknown): Array<ShareSubject | null> {
   if (!Array.isArray(value)) {
-    return Array.from({ length: 9 }, () => null);
+    return createShareSlots<ShareSubject>();
   }
 
-  const next = Array.from({ length: 9 }, () => null as ShareSubject | null);
-  for (let index = 0; index < 9; index += 1) {
+  const next = createShareSlots<ShareSubject>();
+  for (let index = 0; index < Math.min(value.length, SHARE_SLOT_COUNT); index += 1) {
     const item = value[index];
     next[index] = item && typeof item === "object" ? (item as ShareSubject) : null;
   }

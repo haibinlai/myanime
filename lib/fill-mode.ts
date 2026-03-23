@@ -1,6 +1,7 @@
 import {
   SUBJECT_KIND_ORDER,
   SubjectKind,
+  getSubjectKindLongLabel,
   getSubjectKindMeta,
   parseSubjectKind,
 } from "@/lib/subject-kind";
@@ -46,7 +47,7 @@ export function getFillModeMeta(mode: FillMode): FillModeMeta {
     label: meta.label,
     route: `/${mode}`,
     selectionUnit: meta.selectionUnit,
-    pageTitle: `构成我的${meta.longLabel}`,
+    pageTitle: `构成我的${getSubjectKindLongLabel(mode)}`,
     subtitle: meta.subtitle,
   };
 }

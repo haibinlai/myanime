@@ -6,6 +6,7 @@ import { DragDropProvider } from "@dnd-kit/react";
 import { Feedback, AutoScroller, Cursor } from '@dnd-kit/dom';
 import { useSortable, isSortable } from "@dnd-kit/react/sortable";
 import { arrayMove } from "@dnd-kit/helpers";
+import { SHARE_SLOT_COUNT } from "@/lib/share/config";
 import { ShareGame } from "@/lib/share/types";
 import { SubjectKind } from "@/lib/subject-kind";
 import { cn } from "@/lib/utils";
@@ -156,8 +157,9 @@ export function NineGridBoard({
   onOpenComment,
   onReorder,
 }: NineGridBoardProps) {
+  const useExpandedGrid = SHARE_SLOT_COUNT > 12;
   const grid = (
-    <div className="w-full grid grid-cols-3 gap-2 sm:gap-3">
+    <div className={cn("grid w-full gap-2 sm:gap-3", useExpandedGrid ? "grid-cols-3 sm:grid-cols-4" : "grid-cols-3")}>
       {games.map((game, index) => {
         const id = game ? `subject-${game.id}` : `empty-${index}`;
 

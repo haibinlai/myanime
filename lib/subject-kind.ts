@@ -1,3 +1,5 @@
+import { SHARE_SLOT_COUNT_LABEL } from "@/lib/share/config";
+
 export type SubjectKind =
   | "game"
   | "anime"
@@ -51,7 +53,7 @@ const KIND_META_MAP: Record<SubjectKind, SubjectKindMeta> = {
   game: {
     kind: "game",
     label: "游戏",
-    longLabel: "九部游戏",
+    longLabel: "20部游戏",
     selectionUnit: "部",
     subtitle: "向世界传达你所爱的游戏。",
     searchPlaceholder: "输入游戏名称",
@@ -67,7 +69,7 @@ const KIND_META_MAP: Record<SubjectKind, SubjectKindMeta> = {
   anime: {
     kind: "anime",
     label: "动画",
-    longLabel: "九部动画",
+    longLabel: "20部动画",
     selectionUnit: "部",
     subtitle: "向世界传达你所爱的动画。",
     searchPlaceholder: "输入动画名称",
@@ -83,7 +85,7 @@ const KIND_META_MAP: Record<SubjectKind, SubjectKindMeta> = {
   manga: {
     kind: "manga",
     label: "漫画",
-    longLabel: "九部漫画",
+    longLabel: "20部漫画",
     selectionUnit: "部",
     subtitle: "向世界传达你所爱的漫画。",
     searchPlaceholder: "输入漫画名称",
@@ -100,7 +102,7 @@ const KIND_META_MAP: Record<SubjectKind, SubjectKindMeta> = {
   lightnovel: {
     kind: "lightnovel",
     label: "轻小说",
-    longLabel: "九部轻小说",
+    longLabel: "20部轻小说",
     selectionUnit: "部",
     subtitle: "向世界传达你所爱的轻小说。",
     searchPlaceholder: "输入轻小说名称",
@@ -117,7 +119,7 @@ const KIND_META_MAP: Record<SubjectKind, SubjectKindMeta> = {
   tv: {
     kind: "tv",
     label: "电视剧",
-    longLabel: "九部电视剧",
+    longLabel: "20部电视剧",
     selectionUnit: "部",
     subtitle: "向世界传达你所爱的电视剧。",
     searchPlaceholder: "输入电视剧名称",
@@ -130,7 +132,7 @@ const KIND_META_MAP: Record<SubjectKind, SubjectKindMeta> = {
   movie: {
     kind: "movie",
     label: "电影",
-    longLabel: "九部电影",
+    longLabel: "20部电影",
     selectionUnit: "部",
     subtitle: "向世界传达你所爱的电影。",
     searchPlaceholder: "输入电影名称",
@@ -143,7 +145,7 @@ const KIND_META_MAP: Record<SubjectKind, SubjectKindMeta> = {
   work: {
     kind: "work",
     label: "作品",
-    longLabel: "九部作品",
+    longLabel: "20部作品",
     selectionUnit: "部",
     subtitle: "向世界传达你所爱的作品。",
     searchPlaceholder: "输入作品名称",
@@ -156,7 +158,7 @@ const KIND_META_MAP: Record<SubjectKind, SubjectKindMeta> = {
   song: {
     kind: "song",
     label: "单曲",
-    longLabel: "九首单曲",
+    longLabel: "20首单曲",
     selectionUnit: "首",
     subtitle: "向世界传达你所爱的单曲。",
     searchPlaceholder: "输入单曲/歌曲名称",
@@ -169,7 +171,7 @@ const KIND_META_MAP: Record<SubjectKind, SubjectKindMeta> = {
   album: {
     kind: "album",
     label: "专辑",
-    longLabel: "九张专辑",
+    longLabel: "20张专辑",
     selectionUnit: "张",
     subtitle: "向世界传达你所爱的专辑。",
     searchPlaceholder: "输入专辑名称",
@@ -182,7 +184,7 @@ const KIND_META_MAP: Record<SubjectKind, SubjectKindMeta> = {
   character: {
     kind: "character",
     label: "角色",
-    longLabel: "九名角色",
+    longLabel: "20名角色",
     selectionUnit: "名",
     subtitle: "向世界传达你所爱的角色。",
     searchPlaceholder: "输入角色名称",
@@ -195,7 +197,7 @@ const KIND_META_MAP: Record<SubjectKind, SubjectKindMeta> = {
   person: {
     kind: "person",
     label: "人物",
-    longLabel: "九位人物",
+    longLabel: "20位人物",
     selectionUnit: "位",
     subtitle: "向世界传达你所爱的人物。",
     searchPlaceholder: "输入人物名称",
@@ -211,9 +213,13 @@ export function getSubjectKindMeta(kind: SubjectKind): SubjectKindMeta {
   return KIND_META_MAP[kind];
 }
 
-export function getSubjectKindShareTitle(kind: SubjectKind): string {
+export function getSubjectKindLongLabel(kind: SubjectKind): string {
   const meta = getSubjectKindMeta(kind);
-  return `构成我的九${meta.selectionUnit}${meta.label}`;
+  return `${SHARE_SLOT_COUNT_LABEL}${meta.selectionUnit}${meta.label}`;
+}
+
+export function getSubjectKindShareTitle(kind: SubjectKind): string {
+  return `构成我的${getSubjectKindLongLabel(kind)}`;
 }
 
 export function parseSubjectKind(value: string | null | undefined): SubjectKind | null {
