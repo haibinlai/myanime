@@ -113,7 +113,7 @@ export function ShareImagePreviewDialog({
       try {
         const blob = await generateShareImageBlob({
           kind,
-          shareId,
+          shareId: shareId ?? undefined,
           title,
           games,
           creatorName,
@@ -169,7 +169,7 @@ export function ShareImagePreviewDialog({
         previewBlob ||
         (await generateShareImageBlob({
           kind,
-          shareId,
+          shareId: shareId ?? undefined,
           title,
           games,
           creatorName,
