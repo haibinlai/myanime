@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { ChevronRight, ChevronsUpDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { SharePlatformActions } from "@/components/share/SharePlatformActions";
@@ -28,6 +28,11 @@ import { normalizeSearchQuery } from "@/lib/search/query";
 import { SHARE_SLOT_COUNT, createShareSlots, normalizeShareSlots } from "@/lib/share/config";
 import { SubjectSearchResponse, ShareGame } from "@/lib/share/types";
 import { cn } from "@/lib/utils";
+import {
+  buildDefaultShareImageHeaderTitle,
+  downloadBlob,
+  generateShareImageBlob,
+} from "@/utils/image/exportShareImage";
 
 type ToastState = {
   kind: ToastKind;
@@ -73,8 +78,6 @@ const SEARCH_CLIENT_CACHE_SESSION_KEY = "my-nine-search-cache:v1";
 const SEARCH_CLIENT_CACHE_TTL_MS = 15 * 60 * 1000;
 const SEARCH_CLIENT_CACHE_MAX = 192;
 const SEARCH_REQUEST_COOLDOWN_MS = 400;
-const SHARE_NAVIGATION_FALLBACK_MS = 1400;
-
 type SearchClientCacheEntry = {
   expiresAt: number;
   response: SubjectSearchResponse;
@@ -159,7 +162,6 @@ export default function My9V3App({
   readOnlyShare = false,
 }: My9V3AppProps) {
   const router = useRouter();
-  const pathname = usePathname();
   const kindMeta = useMemo(() => getSubjectKindMeta(kind), [kind]);
 
   const [games, setGames] = useState<Array<ShareGame | null>>(() =>
@@ -186,8 +188,6 @@ export default function My9V3App({
   const searchClientCacheRef = useRef<Map<string, SearchClientCacheEntry>>(new Map());
   const searchClientCacheHydratedRef = useRef(false);
   const lastSearchRequestRef = useRef<{ key: string; requestedAt: number } | null>(null);
-  const navigationFallbackTimerRef = useRef<number | null>(null);
-  const navigationFallbackTargetRef = useRef<string | null>(null);
   const [searchMeta, setSearchMeta] = useState<SearchMeta>(
     createSearchMeta()
   );
@@ -215,14 +215,6 @@ export default function My9V3App({
     writeSearchClientCacheToSession(searchClientCacheRef.current);
   }
 
-  function clearNavigationFallback() {
-    if (navigationFallbackTimerRef.current !== null) {
-      window.clearTimeout(navigationFallbackTimerRef.current);
-      navigationFallbackTimerRef.current = null;
-    }
-    navigationFallbackTargetRef.current = null;
-  }
-
   useEffect(() => {
     if (!toast) return;
     const timer = setTimeout(() => setToast(null), 2800);
@@ -234,28 +226,6 @@ export default function My9V3App({
     searchClientCacheRef.current = readSearchClientCacheFromSession();
     searchClientCacheHydratedRef.current = true;
   }, []);
-
-  useEffect(() => {
-    const pendingTarget = navigationFallbackTargetRef.current;
-    if (!pendingTarget) return;
-    if (pathname !== pendingTarget) return;
-    if (navigationFallbackTimerRef.current !== null) {
-      window.clearTimeout(navigationFallbackTimerRef.current);
-      navigationFallbackTimerRef.current = null;
-    }
-    navigationFallbackTargetRef.current = null;
-  }, [pathname]);
-
-  useEffect(
-    () => () => {
-      if (navigationFallbackTimerRef.current !== null) {
-        window.clearTimeout(navigationFallbackTimerRef.current);
-      }
-      navigationFallbackTimerRef.current = null;
-      navigationFallbackTargetRef.current = null;
-    },
-    []
-  );
 
   useEffect(() => {
     if (!initialShareData) return;
@@ -620,39 +590,22 @@ export default function My9V3App({
 
     setSavingShare(true);
     try {
-      const response = await fetch("/api/share", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          kind,
-          creatorName: creatorName.trim() || null,
-          games: sharePayloadGames,
-        }),
+      const resolvedCreatorName = creatorName.trim() || null;
+      const title = buildDefaultShareImageHeaderTitle(kind, resolvedCreatorName);
+      const blob = await generateShareImageBlob({
+        kind,
+        title,
+        games: sharePayloadGames,
+        creatorName: resolvedCreatorName,
+        showHeaderBlock: true,
+        showHeaderQr: false,
+        showComments: true,
       });
-
-      const json = await response.json();
-      if (!response.ok || !json?.ok) {
-        pushToast("error", json?.error || "分享创建失败");
-        return;
-      }
-
-      const targetKind = parseSubjectKind(json.kind) ?? kind;
-      setShareId(json.shareId);
-      pushToast("success", json.deduped ? "分享页面已创建" : "分享页面已创建");
-      const target = `/${targetKind}/s/${json.shareId}`;
-      clearNavigationFallback();
-      navigationFallbackTargetRef.current = target;
-      router.replace(target);
-      navigationFallbackTimerRef.current = window.setTimeout(() => {
-        const fallbackTarget = navigationFallbackTargetRef.current;
-        if (!fallbackTarget) return;
-        if (window.location.pathname !== fallbackTarget) {
-          window.location.assign(fallbackTarget);
-        }
-        clearNavigationFallback();
-      }, SHARE_NAVIGATION_FALLBACK_MS);
+      downloadBlob(blob, `${title}.png`);
+      setShareId(null);
+      pushToast("success", "图片已开始下载");
     } catch {
-      pushToast("error", "分享创建失败，请稍后重试");
+      pushToast("error", "图片生成失败，请稍后重试");
     } finally {
       setSavingShare(false);
     }
@@ -693,7 +646,7 @@ export default function My9V3App({
 
   return (
     <main className="min-h-screen bg-background px-4 py-16 text-foreground">
-      <div className="mx-auto flex w-full max-w-4xl flex-col items-center gap-4">
+      <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-4">
         <header className="space-y-3 text-center">
           <div className="inline-flex items-center gap-2 sm:gap-3">
             <h1 className="whitespace-nowrap text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-4xl">

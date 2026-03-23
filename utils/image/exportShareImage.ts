@@ -20,7 +20,8 @@ const PANEL_Y = PANEL_MARGIN_Y;
 const PANEL_WIDTH = CANVAS_WIDTH - PANEL_MARGIN_X * 2;
 const SECTION_DIVIDER_INSET = 22;
 const SECTION_CONTENT_X = PANEL_X + 26;
-const EXPORT_GRID_COLUMNS = SHARE_SLOT_COUNT > 12 ? 4 : 3;
+const EXPORT_GRID_COLUMNS =
+  SHARE_SLOT_COUNT > 120 ? 8 : SHARE_SLOT_COUNT > 48 ? 6 : SHARE_SLOT_COUNT > 12 ? 4 : 3;
 const EXPORT_GRID_ROWS = Math.ceil(SHARE_SLOT_COUNT / EXPORT_GRID_COLUMNS);
 const GRID_INNER_WIDTH = PANEL_WIDTH - PANEL_PADDING * 2;
 const GRID_SLOT_WIDTH = Math.floor((GRID_INNER_WIDTH - SLOT_GAP * (EXPORT_GRID_COLUMNS - 1)) / EXPORT_GRID_COLUMNS);
@@ -28,6 +29,13 @@ const GRID_SLOT_HEIGHT = Math.floor((GRID_SLOT_WIDTH * 4) / 3);
 const GRID_HEIGHT = GRID_SLOT_HEIGHT * EXPORT_GRID_ROWS + SLOT_GAP * (EXPORT_GRID_ROWS - 1);
 const BASE_PANEL_HEIGHT = GRID_HEIGHT + PANEL_PADDING * 2;
 const CANVAS_HEIGHT = BASE_PANEL_HEIGHT + PANEL_MARGIN_Y * 2;
+const GRID_CORNER_RADIUS = Math.max(8, Math.min(14, Math.floor(GRID_SLOT_WIDTH * 0.12)));
+const GRID_INDEX_FONT_SIZE = Math.max(10, Math.min(19, Math.floor(GRID_SLOT_WIDTH * 0.17)));
+const GRID_INDEX_OFFSET_X = Math.max(6, Math.floor(GRID_SLOT_WIDTH * 0.08));
+const GRID_INDEX_OFFSET_Y = Math.max(16, Math.floor(GRID_SLOT_WIDTH * 0.22));
+const GRID_NAME_STRIP_HEIGHT = Math.max(24, Math.min(52, Math.floor(GRID_SLOT_HEIGHT * 0.22)));
+const GRID_NAME_FONT_SIZE = Math.max(10, Math.min(21, Math.floor(GRID_SLOT_WIDTH * 0.18)));
+const GRID_NAME_HORIZONTAL_PADDING = Math.max(8, Math.floor(GRID_SLOT_WIDTH * 0.12));
 
 const REVIEW_SECTION_TOP_PADDING = 28;
 const REVIEW_SECTION_BOTTOM_PADDING = 32;
@@ -183,22 +191,25 @@ function drawEmptySlot(
   height: number
 ) {
   const centerX = x + width / 2;
-  const centerY = y + height / 2 - 12;
+  const plusHalf = Math.max(7, Math.min(13, Math.floor(width * 0.12)));
+  const iconStroke = Math.max(2, Math.min(4, Math.floor(width * 0.035)));
+  const labelFontSize = Math.max(10, Math.min(24, Math.floor(width * 0.18)));
+  const centerY = y + height / 2 - Math.max(8, Math.floor(height * 0.08));
 
   ctx.strokeStyle = "#9ca3af";
-  ctx.lineWidth = 4;
+  ctx.lineWidth = iconStroke;
   ctx.lineCap = "round";
   ctx.beginPath();
-  ctx.moveTo(centerX - 13, centerY);
-  ctx.lineTo(centerX + 13, centerY);
-  ctx.moveTo(centerX, centerY - 13);
-  ctx.lineTo(centerX, centerY + 13);
+  ctx.moveTo(centerX - plusHalf, centerY);
+  ctx.lineTo(centerX + plusHalf, centerY);
+  ctx.moveTo(centerX, centerY - plusHalf);
+  ctx.lineTo(centerX, centerY + plusHalf);
   ctx.stroke();
 
   ctx.fillStyle = "#9ca3af";
-  ctx.font = "600 24px sans-serif";
+  ctx.font = `600 ${labelFontSize}px sans-serif`;
   ctx.textAlign = "center";
-  ctx.fillText("选择", centerX, centerY + 45);
+  ctx.fillText("选择", centerX, centerY + Math.max(26, Math.floor(height * 0.2)));
 }
 
 function trimTextToWidth(
@@ -364,7 +375,7 @@ function drawGrid(
     const y = PANEL_Y + PANEL_PADDING + row * (slotHeight + SLOT_GAP);
 
     ctx.save();
-    roundedRectPath(ctx, x, y, slotWidth, slotHeight, 14);
+    roundedRectPath(ctx, x, y, slotWidth, slotHeight, GRID_CORNER_RADIUS);
     ctx.fillStyle = "#f9fafb";
     ctx.fill();
     ctx.strokeStyle = "#e5e7eb";
@@ -373,7 +384,7 @@ function drawGrid(
     ctx.restore();
 
     ctx.save();
-    roundedRectPath(ctx, x, y, slotWidth, slotHeight, 14);
+    roundedRectPath(ctx, x, y, slotWidth, slotHeight, GRID_CORNER_RADIUS);
     ctx.clip();
     const cover = covers[index];
     if (cover) {
@@ -386,19 +397,19 @@ function drawGrid(
     ctx.restore();
 
     ctx.fillStyle = "#d1d5db";
-    ctx.font = "700 19px sans-serif";
+    ctx.font = `700 ${GRID_INDEX_FONT_SIZE}px sans-serif`;
     ctx.textAlign = "left";
-    ctx.fillText(String(index + 1), x + 12, y + 24);
+    ctx.fillText(String(index + 1), x + GRID_INDEX_OFFSET_X, y + GRID_INDEX_OFFSET_Y);
 
     if (showNames) {
-      const stripHeight = 52;
+      const stripHeight = GRID_NAME_STRIP_HEIGHT;
       const stripY = y + slotHeight - stripHeight;
-      const name = trimTextToWidth(ctx, item.title || "", slotWidth - 20);
+      const name = trimTextToWidth(ctx, item.title || "", slotWidth - GRID_NAME_HORIZONTAL_PADDING * 2);
 
       ctx.fillStyle = "rgba(255,255,255,0.95)";
       ctx.fillRect(x, stripY, slotWidth, stripHeight);
       ctx.fillStyle = "#111827";
-      ctx.font = "700 21px sans-serif";
+      ctx.font = `700 ${GRID_NAME_FONT_SIZE}px sans-serif`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText(name, x + slotWidth / 2, stripY + stripHeight / 2 + 1);

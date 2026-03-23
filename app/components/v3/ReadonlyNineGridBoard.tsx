@@ -20,9 +20,16 @@ function shouldTopCropCover(kind?: SubjectKind) {
 }
 
 export function ReadonlyNineGridBoard({ games, subjectLabel, kind }: ReadonlyNineGridBoardProps) {
-  const useExpandedGrid = SHARE_SLOT_COUNT > 12;
+  const gridClassName =
+    SHARE_SLOT_COUNT > 120
+      ? "grid-cols-4 sm:grid-cols-5 lg:grid-cols-6"
+      : SHARE_SLOT_COUNT > 48
+        ? "grid-cols-4 sm:grid-cols-5"
+        : SHARE_SLOT_COUNT > 12
+          ? "grid-cols-3 sm:grid-cols-4"
+          : "grid-cols-3";
   return (
-    <div className={cn("grid w-full gap-2 sm:gap-3", useExpandedGrid ? "grid-cols-3 sm:grid-cols-4" : "grid-cols-3")}>
+    <div className={cn("grid w-full gap-2 sm:gap-3", gridClassName)}>
       {games.map((game, index) => {
         const id = game ? `subject-${game.id}-${index}` : `empty-${index}`;
         return (

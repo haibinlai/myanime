@@ -18,11 +18,11 @@ interface ActionClusterProps {
 
 function saveButtonLabel(params: { saving: boolean; filledCount: number; remainingUnit: string }) {
   const { saving, filledCount, remainingUnit } = params;
-  if (saving) return "保存中...";
+  if (saving) return "生成中...";
   if (filledCount < SHARE_SLOT_COUNT) {
-    return `还差 ${SHARE_SLOT_COUNT - filledCount} ${remainingUnit}可保存`;
+    return `还差 ${SHARE_SLOT_COUNT - filledCount} ${remainingUnit}可保存图片`;
   }
-  return "保存页面";
+  return "保存图片";
 }
 
 export function ActionCluster({

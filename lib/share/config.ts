@@ -1,4 +1,4 @@
-export const SHARE_SLOT_COUNT = 20;
+export const SHARE_SLOT_COUNT = 200;
 export const SHARE_SLOT_COUNT_LABEL = String(SHARE_SLOT_COUNT);
 
 export function createShareSlots<T>(): Array<T | null> {

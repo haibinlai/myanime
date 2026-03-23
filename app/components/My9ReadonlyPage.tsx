@@ -29,7 +29,7 @@ export default function My9ReadonlyPage({ kind, shareId, initialShareData }: My9
 
   return (
     <main className="min-h-screen bg-background px-4 py-16 text-foreground">
-      <div className="mx-auto flex w-full max-w-4xl flex-col items-center gap-4">
+      <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-4">
         <header className="space-y-3 text-center">
           <h1 className="whitespace-nowrap text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-4xl">
             {shareTitle}
