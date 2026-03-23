@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ChevronRight, ChevronsUpDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { SharePlatformActions } from "@/components/share/SharePlatformActions";
+import { ShareImagePreviewDialog } from "@/components/share/ShareImagePreviewDialog";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SubjectKindIcon } from "@/components/subject/SubjectKindIcon";
 import { Button } from "@/components/ui/button";
@@ -28,11 +29,7 @@ import { normalizeSearchQuery } from "@/lib/search/query";
 import { SHARE_SLOT_COUNT, createShareSlots, normalizeShareSlots } from "@/lib/share/config";
 import { SubjectSearchResponse, ShareGame } from "@/lib/share/types";
 import { cn } from "@/lib/utils";
-import {
-  buildDefaultShareImageHeaderTitle,
-  downloadBlob,
-  generateShareImageBlob,
-} from "@/utils/image/exportShareImage";
+import { buildDefaultShareImageHeaderTitle } from "@/utils/image/exportShareImage";
 
 type ToastState = {
   kind: ToastKind;
@@ -173,6 +170,7 @@ export default function My9V3App({
   const [savingShare, setSavingShare] = useState(false);
   const [draftHydrated, setDraftHydrated] = useState(false);
   const [kindPickerOpen, setKindPickerOpen] = useState(false);
+  const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
 
   const [toast, setToast] = useState<ToastState>(null);
   const [singleUndoSnapshot, setSingleUndoSnapshot] = useState<DraftSnapshot | null>(null);
@@ -573,42 +571,9 @@ export default function My9V3App({
       if (!confirmed) return;
     }
 
-    const sharePayloadGames = games.map((game) => {
-      if (!game) return null;
-      return {
-        id: game.id,
-        name: game.name,
-        localizedName: game.localizedName,
-        cover: game.cover,
-        releaseYear: game.releaseYear,
-        genres: game.genres,
-        storeUrls: game.storeUrls,
-        comment: game.comment,
-        spoiler: game.spoiler,
-      };
-    });
-
     setSavingShare(true);
-    try {
-      const resolvedCreatorName = creatorName.trim() || null;
-      const title = buildDefaultShareImageHeaderTitle(kind, resolvedCreatorName);
-      const blob = await generateShareImageBlob({
-        kind,
-        title,
-        games: sharePayloadGames,
-        creatorName: resolvedCreatorName,
-        showHeaderBlock: true,
-        showHeaderQr: false,
-        showComments: true,
-      });
-      downloadBlob(blob, `${title}.png`);
-      setShareId(null);
-      pushToast("success", "图片已开始下载");
-    } catch {
-      pushToast("error", "图片生成失败，请稍后重试");
-    } finally {
-      setSavingShare(false);
-    }
+    setImagePreviewOpen(true);
+    window.setTimeout(() => setSavingShare(false), 0);
   }
 
   function handleNotice(kindValue: ToastKind, message: string) {
@@ -813,6 +778,18 @@ export default function My9V3App({
         onChangeValue={setCommentText}
         onChangeSpoiler={setCommentSpoiler}
         onSave={saveComment}
+      />
+
+      <ShareImagePreviewDialog
+        open={imagePreviewOpen}
+        onOpenChange={setImagePreviewOpen}
+        kind={kind}
+        shareId={null}
+        title={buildDefaultShareImageHeaderTitle(kind, creatorName.trim() || null)}
+        games={games}
+        creatorName={creatorName}
+        defaultHeaderSubtitle="长按图片保存到相册"
+        onNotice={handleNotice}
       />
 
       <Dialog open={kindPickerOpen} onOpenChange={setKindPickerOpen}>

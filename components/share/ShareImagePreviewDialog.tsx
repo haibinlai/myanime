@@ -26,10 +26,11 @@ interface ShareImagePreviewDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   kind: SubjectKind;
-  shareId: string;
+  shareId?: string | null;
   title: string;
   games: Array<ShareGame | null>;
   creatorName?: string | null;
+  defaultHeaderSubtitle?: string;
   onNotice: (kind: NoticeKind, message: string) => void;
 }
 
@@ -46,12 +47,14 @@ export function ShareImagePreviewDialog({
   title,
   games,
   creatorName,
+  defaultHeaderSubtitle,
   onNotice,
 }: ShareImagePreviewDialogProps) {
   const [showHeaderBlock, setShowHeaderBlock] = useState(true);
   const [showCustomHeaderSubtitle, setShowCustomHeaderSubtitle] = useState(false);
   const [headerSubtitle, setHeaderSubtitle] = useState(() =>
-    buildDefaultShareImageHeaderSubtitle(kind, creatorName, games.filter((game) => Boolean(game?.comment?.trim())).length)
+    defaultHeaderSubtitle ??
+      buildDefaultShareImageHeaderSubtitle(kind, creatorName, games.filter((game) => Boolean(game?.comment?.trim())).length)
   );
   const [showComments, setShowComments] = useState(false);
   const [showNames, setShowNames] = useState(true);
@@ -62,8 +65,9 @@ export function ShareImagePreviewDialog({
   const requestIdRef = useRef(0);
   const previewUrlRef = useRef<string | null>(null);
   const reviewCount = games.filter((game) => Boolean(game?.comment?.trim())).length;
-  const defaultHeaderSubtitle = buildDefaultShareImageHeaderSubtitle(kind, creatorName, reviewCount);
-  const resolvedHeaderSubtitle = showCustomHeaderSubtitle ? headerSubtitle : defaultHeaderSubtitle;
+  const resolvedDefaultHeaderSubtitle =
+    defaultHeaderSubtitle ?? buildDefaultShareImageHeaderSubtitle(kind, creatorName, reviewCount);
+  const resolvedHeaderSubtitle = showCustomHeaderSubtitle ? headerSubtitle : resolvedDefaultHeaderSubtitle;
 
   useEffect(() => {
     return () => {
@@ -78,7 +82,7 @@ export function ShareImagePreviewDialog({
     if (!open) {
       setShowHeaderBlock(true);
       setShowCustomHeaderSubtitle(false);
-      setHeaderSubtitle(defaultHeaderSubtitle);
+      setHeaderSubtitle(resolvedDefaultHeaderSubtitle);
       setShowComments(false);
       setShowNames(true);
       setLoading(false);
@@ -91,7 +95,7 @@ export function ShareImagePreviewDialog({
       });
       return;
     }
-  }, [defaultHeaderSubtitle, open]);
+  }, [open, resolvedDefaultHeaderSubtitle]);
 
   useEffect(() => {
     if (reviewCount === 0 && showComments) {
@@ -329,14 +333,16 @@ export function ShareImagePreviewDialog({
         </div>
 
         <DialogFooter className="sm:justify-between">
-          <p className="text-xs text-muted-foreground">如果下载失败，可以尝试长按预览图保存，或使用“生成分享链接”功能在系统浏览器打开下载。</p>
+          <p className="text-xs text-muted-foreground">
+            优先尝试长按上方预览图保存；如果当前浏览器支持下载，右侧按钮也可以直接保存。
+          </p>
           <Button
             type="button"
             onClick={handleDownload}
             disabled={loading}
             className="bg-foreground text-background hover:opacity-90"
           >
-            保存图片
+            尝试下载
           </Button>
         </DialogFooter>
       </DialogContent>
