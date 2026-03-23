@@ -295,6 +295,15 @@ function toWsrvUrl(value: string): string | null {
   return `https://wsrv.nl/?url=${encodeURIComponent(normalized)}&w=640&output=webp`;
 }
 
+function toImageProxyUrl(value: string): string | null {
+  const normalized = normalizeCoverUrl(value);
+  if (!normalized) return null;
+  if (normalized.startsWith("data:") || normalized.startsWith("blob:")) {
+    return normalized;
+  }
+  return `/api/image-proxy?url=${encodeURIComponent(normalized)}`;
+}
+
 async function loadCoverImage(cover: string): Promise<HTMLImageElement | null> {
   const normalized = normalizeCoverUrl(cover);
   if (!normalized) return null;
@@ -307,11 +316,11 @@ async function loadCoverImage(cover: string): Promise<HTMLImageElement | null> {
     }
   }
 
-  const wsrvUrl = toWsrvUrl(normalized);
-  if (!wsrvUrl) return null;
+  const proxiedUrl = toImageProxyUrl(toWsrvUrl(normalized) ?? normalized);
+  if (!proxiedUrl) return null;
 
   try {
-    const response = await fetch(wsrvUrl, { cache: "force-cache" });
+    const response = await fetch(proxiedUrl, { cache: "force-cache" });
     if (!response.ok) return null;
     return await blobToImage(await response.blob());
   } catch {
