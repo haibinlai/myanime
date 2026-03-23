@@ -1,6 +1,7 @@
-import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
-
-initOpenNextCloudflareForDev();
+if (process.env.NODE_ENV === "development" && !process.env.VERCEL) {
+  const { initOpenNextCloudflareForDev } = await import("@opennextjs/cloudflare");
+  initOpenNextCloudflareForDev();
+}
 
 /** @type {import("next").NextConfig} */
 const nextConfig = {

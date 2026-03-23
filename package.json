@@ -10,7 +10,7 @@
     "dev:test": "node -e \"require('fs').rmSync('.next', { recursive: true, force: true })\" && next dev -H 0.0.0.0",
     "share-count:snapshot": "node scripts/write-share-count-snapshot.mjs",
     "prebuild": "npm run share-count:snapshot",
-    "build": "next build",
+    "build": "next build --webpack",
     "prebuild:cf": "npm run share-count:snapshot",
     "build:cf": "node scripts/build-next-cf.mjs",
     "start": "next start",
